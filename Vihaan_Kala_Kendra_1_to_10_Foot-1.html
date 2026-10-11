@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e65100">
+<title>Vihaan Kala Kendra</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#fff8ef;color:#263238}.wrap{max-width:980px;margin:auto}
+header{background:linear-gradient(135deg,#e65100,#ff9800);color:#fff;padding:22px 18px;border-radius:0 0 26px 26px}
+h1{margin:0;font-size:25px}header p{margin:5px 0 0}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:16px}
+.card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 14px #00000012}.num{font-size:28px;font-weight:700;margin-top:5px}
+.orange{border-left:6px solid #e65100}.green{border-left:6px solid #43a047}.blue{border-left:6px solid #1976d2}.purple{border-left:6px solid #7e57c2}
+section{padding:0 16px 18px}h2{font-size:20px;margin-bottom:12px}.stock{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.height{font-weight:bold;color:#e65100;font-size:18px}.small{font-size:13px;color:#607d8b}.form{display:grid;gap:10px}
+.form input,.form select{padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:12px;padding:12px 15px;background:#e65100;color:white;font-weight:bold;cursor:pointer}
+button.secondary{background:#546e7a}button.danger{background:#b71c1c}
+.tablewrap{overflow:auto;border-radius:14px}table{width:100%;border-collapse:collapse;background:#fff;min-width:650px}th,td{padding:11px;border-bottom:1px solid #eee;text-align:left}th{background:#fff0df}
+.badge{display:inline-block;padding:4px 8px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-size:12px}
+details{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 2px 10px #0000000d}summary{font-weight:bold;cursor:pointer}
+@media(max-width:520px){.cards{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.num{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>🪔 Vihaan Kala Kendra</h1><p>॥ गणपती कला, आमची परंपरा ॥</p></header>
+
+<div class="cards">
+<div class="card orange">🪔 एकूण गणपती<div class="num" id="total">0</div></div>
+<div class="card green">✅ विकलेले<div class="num" id="sold">0</div></div>
+<div class="card blue">📦 उपलब्ध<div class="num" id="available">0</div></div>
+<div class="card purple">💰 एकूण विक्री<div class="num">₹<span id="sales">0</span></div></div>
+</div>
+
+<section>
+<h2>📏 गणपती स्टॉक — १ ते १० फूट</h2>
+<div class="stock" id="stock"></div>
+</section>
+
+<section>
+<h2>➕ स्टॉक / किंमत अपडेट</h2>
+<div class="card form">
+<div class="grid2">
+<select id="stockHeight"></select>
+<input id="stockTotal" type="number" min="0" placeholder="Total Stock">
+</div>
+<div class="grid2">
+<input id="stockPrice" type="number" min="0" placeholder="किंमत ₹">
+<input id="model" placeholder="मॉडेल / प्रकार (उदा. राजेशाही)">
+</div>
+<div class="actions"><button onclick="updateStock()">स्टॉक सेव्ह करा</button></div>
+</div>
+</section>
+
+<section>
+<h2>🧾 सविस्तर विक्री नोंद</h2>
+<div class="card form">
+<div class="grid2">
+<input id="customer" placeholder="ग्राहकाचे नाव">
+<input id="phone" type="tel" placeholder="मोबाईल नंबर">
+</div>
+<div class="grid2">
+<select id="height"></select>
+<input id="salePrice" type="number" min="0" placeholder="एकूण किंमत ₹">
+</div>
+<div class="grid2">
+<input id="advance" type="number" min="0" placeholder="Advance ₹">
+<input id="balance" type="number" min="0" placeholder="बाकी ₹" readonly>
+</div>
+<input id="note" placeholder="विशेष माहिती / पत्ता / डिझाईन">
+<div class="actions"><button onclick="addSale()">विक्री नोंदवा</button><button class="secondary" onclick="resetData()">सगळा डेटा Reset</button></div>
+<div class="small">नोंदी या ब्राउझरमध्ये सेव्ह होतात. Advance भरल्यावर बाकी रक्कम आपोआप मोजली जाते.</div>
+</div>
+</section>
+
+<section>
+<h2>📋 विक्री यादी</h2>
+<div class="tablewrap"><table><thead><tr><th>ग्राहक</th><th>मोबाईल</th><th>उंची</th><th>किंमत</th><th>Advance</th><th>बाकी</th><th>तारीख</th></tr></thead><tbody id="salesList"></tbody></table></div>
+</section>
+</div>
+
+<script>
+const heights=Array.from({length:10},(_,i)=>String(i+1));
+const labels=Object.fromEntries(heights.map(h=>[h,` ${h} फूट`]));
+let data=JSON.parse(localStorage.getItem("vkcData10")||"null");
+if(!data){
+ data={stock:{},sales:[]};
+ heights.forEach(h=>data.stock[h]={total:0,sold:0,price:0,model:""});
+}
+function save(){localStorage.setItem("vkcData10",JSON.stringify(data));render()}
+function fillSelects(){
+ const opts=heights.map(h=>`<option value="${h}">${labels[h]}</option>`).join("");
+ document.getElementById("height").innerHTML=opts;document.getElementById("stockHeight").innerHTML=opts;
+}
+function render(){
+ let total=0,sold=0,sales=0;
+ document.getElementById("stock").innerHTML=heights.map(h=>{
+   let x=data.stock[h]; total+=Number(x.total); sold+=Number(x.sold);
+   sales+=data.sales.filter(s=>s.height==h).reduce((a,b)=>a+Number(b.price),0);
+   return `<div class="card"><div class="height">🪔 ${h} फूट</div>
+   <div>Total: <b>${x.total}</b></div><div>Sold: <b>${x.sold}</b></div>
+   <div>Available: <b>${x.total-x.sold}</b></div><div>किंमत: <b>₹${Number(x.price).toLocaleString("en-IN")}</b></div>
+   ${x.model?`<div class="small">मॉडेल: ${x.model}</div>`:""}</div>`;
+ }).join("");
+ document.getElementById("total").textContent=total;document.getElementById("sold").textContent=sold;
+ document.getElementById("available").textContent=total-sold;document.getElementById("sales").textContent=sales.toLocaleString("en-IN");
+ document.getElementById("salesList").innerHTML=data.sales.slice().reverse().map(s=>`<tr>
+ <td>${esc(s.customer)}</td><td>${esc(s.phone)}</td><td>${labels[s.height]}</td>
+ <td>₹${Number(s.price).toLocaleString("en-IN")}</td><td>₹${Number(s.advance).toLocaleString("en-IN")}</td>
+ <td>₹${Number(s.balance).toLocaleString("en-IN")}</td><td>${s.date}</td></tr>`).join("")||
+ '<tr><td colspan="7">अजून विक्री नोंद नाही.</td></tr>';
+}
+function updateStock(){
+ const h=document.getElementById("stockHeight").value, total=Number(document.getElementById("stockTotal").value);
+ if(total<Number(data.stock[h].sold)) return alert("Total stock हा Sold पेक्षा कमी असू शकत नाही.");
+ data.stock[h].total=total;data.stock[h].price=Number(document.getElementById("stockPrice").value)||0;
+ data.stock[h].model=document.getElementById("model").value.trim();save();
+}
+function addSale(){
+ let customer=document.getElementById("customer").value.trim(),phone=document.getElementById("phone").value.trim(),
+ h=document.getElementById("height").value,price=Number(document.getElementById("salePrice").value),
+ advance=Number(document.getElementById("advance").value)||0;
+ if(!customer||!price)return alert("ग्राहकाचे नाव आणि एकूण किंमत भरा.");
+ if(advance>price)return alert("Advance एकूण किंमतीपेक्षा जास्त असू शकत नाही.");
+ if(data.stock[h].sold>=data.stock[h].total)return alert("या उंचीचा उपलब्ध स्टॉक नाही.");
+ data.stock[h].sold++;
+ data.sales.push({customer,phone,height:h,price,advance,balance:price-advance,note:document.getElementById("note").value.trim(),date:new Date().toLocaleDateString("en-IN")});
+ save();
+ ["customer","phone","salePrice","advance","balance","note"].forEach(id=>document.getElementById(id).value="");
+}
+document.getElementById("salePrice").addEventListener("input",calcBalance);
+document.getElementById("advance").addEventListener("input",calcBalance);
+function calcBalance(){document.getElementById("balance").value=Math.max(0,Number(document.getElementById("salePrice").value||0)-Number(document.getElementById("advance").value||0))}
+function resetData(){if(confirm("सगळा स्टॉक आणि विक्री डेटा मिटवायचा का?")){localStorage.removeItem("vkcData10");location.reload()}}
+function esc(v){return String(v||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+fillSelects();render();
+</script>
+</body>
+</html>
